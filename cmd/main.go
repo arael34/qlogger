@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/arael34/qlogger"
 	_ "github.com/go-sql-driver/mysql"
 )
 

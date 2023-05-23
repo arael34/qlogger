@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/arael34/qlogger"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -16,7 +17,7 @@ func main() {
 	fmt.Println("starting...")
 
 	// Grab environment variables
-	environment, envErr := ValidateEnvironment()
+	environment, envErr := qlogger.ValidateEnvironment()
 	if envErr != nil {
 		fmt.Println(envErr)
 		os.Exit(1)
@@ -68,7 +69,7 @@ func main() {
 	// Finish connecting to database
 
 	// Set up routes
-	qlog := NewQLogger(&environment.DatabaseUrl)
+	qlog := qlogger.NewQLogger(&environment.DatabaseUrl)
 
 	http.HandleFunc("/api/write/", qlog.WriteLog)
 	http.HandleFunc("/api/read/", qlog.ReadLog)

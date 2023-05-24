@@ -22,11 +22,12 @@ const (
 
 // This probably isn't needed, I'm keeping it just in case
 type QLogger struct {
-	DatabaseUrl *string
+	authHeader *string
+	database   *QLoggerDatabase
 }
 
-func NewQLogger(_DatabaseUrl *string) *QLogger {
-	return &QLogger{DatabaseUrl: _DatabaseUrl}
+func NewQLogger(authHeader *string, database *QLoggerDatabase) *QLogger {
+	return &QLogger{authHeader, database}
 }
 
 /*
@@ -40,13 +41,20 @@ type LogSchema struct {
 
 /*
  * Handler to write a log into the database.
+ * Expects Authorization header.
  *
  * Expected body:
  *   Time: string (or datetime)
  *   Message: string
  *   Level: int
  */
-func (s *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
+func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
+	// Authorize user.
+	if r.Header.Get("Authorization") != *logger.authHeader {
+		http.Error(w, "not authorized.", http.StatusUnauthorized)
+		return
+	}
+
 	var log LogSchema
 
 	// Limit body size to 1MB and disallow unknown JSON fields
@@ -60,11 +68,12 @@ func (s *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Received message %v with level %v", log.Message, log.Level)
+	fmt.Printf("Received message %v with level %v\n", log.Message, log.Level)
 }
 
 /*
  * Handler to read all logs. No body is necessary.
+ * Expects Authorization header.
  *
  * Return body:
  *   Array<{
@@ -73,8 +82,14 @@ func (s *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
  *     Level: int
  *   }>
  */
-func (s *QLogger) ReadLog(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("reading....")
+func (logger *QLogger) ReadLog(w http.ResponseWriter, r *http.Request) {
+	// Authorize user.
+	if r.Header.Get("Authorization") != *logger.authHeader {
+		http.Error(w, "not authorized.", http.StatusUnauthorized)
+		return
+	}
+
+	fmt.Printf("reading....\n")
 
 	// Set response header to JSON
 	w.Header().Set("Content-Type", "application/json")

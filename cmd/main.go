@@ -1,15 +1,11 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	qlogger "internal/logger"
 	"net/http"
 	"os"
 	"os/signal"
-	"time"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
@@ -17,7 +13,7 @@ func main() {
 	fmt.Println()
 
 	// Grab environment variables
-	environment, envErr := qlogger.ValidateEnvironment()
+	environment, envErr := ValidateEnvironment()
 	if envErr != nil {
 		fmt.Println(envErr)
 		os.Exit(1)
@@ -27,16 +23,11 @@ func main() {
 	// Finish grabbing environment variables
 
 	// Connect to database
-	db, dbErr := sql.Open("mysql", environment.DatabaseUrl)
+	db, dbErr := qlogger.ConnectToDatabase(&environment.AuthHeader)
 	if dbErr != nil {
-		fmt.Println(dbErr)
+		fmt.Println(envErr)
 		os.Exit(1)
 	}
-
-	// Important settings
-	db.SetConnMaxLifetime(time.Minute * 3)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
 
 	/*
 	 * Handle graceful exit on SIGTERM or SIGINT.
@@ -44,25 +35,25 @@ func main() {
 	 */
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt)
-	go func(db *sql.DB) {
+	go func(db *qlogger.QLoggerDatabase) {
 		signal := <-sigc
 		db.Close()
 		fmt.Printf(
-			"recieved signal %v. successfully closed connection to database",
+			"recieved signal %v. successfully closed connections to database",
 			signal,
 		)
 		os.Exit(0)
 	}(db)
 
 	// On normal exit, close connection to db.
-	defer func(db *sql.DB) {
+	defer func(db *qlogger.QLoggerDatabase) {
 		db.Close()
 		fmt.Printf("successfully closed connection to database")
 	}(db)
 
-	if err := db.Ping(); err != nil {
+	if err := db.Handle.Ping(); err != nil {
 		fmt.Printf("failed to ping: %v", err)
-		os.Exit(1)
+		os.Exit(db.Close())
 	}
 
 	fmt.Println("successfully pinged database.")
@@ -72,7 +63,7 @@ func main() {
 	fmt.Println()
 
 	// Set up routes
-	qlog := qlogger.NewQLogger(&environment.DatabaseUrl)
+	qlog := qlogger.NewQLogger(&environment.AuthHeader, db)
 
 	http.HandleFunc("/api/write/", qlog.WriteLog)
 	http.HandleFunc("/api/read/", qlog.ReadLog)
@@ -83,6 +74,6 @@ func main() {
 	serveErr := http.ListenAndServe(":3000", nil)
 	if serveErr != nil {
 		fmt.Printf("error serving: %v", serveErr)
-		os.Exit(1)
+		os.Exit(db.Close())
 	}
 }

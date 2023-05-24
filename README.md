@@ -2,12 +2,15 @@
 
 A simple logging client.
 
-### TODO
+## TODO
 
-# before release
-- make sure api calls are solid
+### before release
+- make sure api calls are solid, prob with thunderbird or smth
 - db calls
-- auth
+- functional auth, maybe a sign in
 
-# after
+### after
+- move database into internal?
+- maybe use something other than json for speed?
+- better auth handling
 - better error handling

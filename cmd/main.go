@@ -3,7 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	qlogger "internal/logger"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,6 +14,7 @@ import (
 
 func main() {
 	fmt.Println("starting...")
+	fmt.Println()
 
 	// Grab environment variables
 	environment, envErr := qlogger.ValidateEnvironment()
@@ -67,6 +68,8 @@ func main() {
 	fmt.Println("successfully pinged database.")
 	// Finish connecting to database
 
+	fmt.Println("\nready to go.")
+
 	// Set up routes
 	qlog := qlogger.NewQLogger(&environment.DatabaseUrl)
 
@@ -76,5 +79,9 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("../static")))
 	// Finish setting up routes
 
-	log.Fatal(http.ListenAndServe(":3000", nil))
+	serveErr := http.ListenAndServe(":3000", nil)
+	if serveErr != nil {
+		fmt.Printf("error serving: %v", serveErr)
+		os.Exit(1)
+	}
 }

@@ -16,14 +16,14 @@ func ValidateEnvironment() (*Environment, error) {
 	var env map[string]string
 	env, err := godotenv.Read()
 	if err != nil {
-		return &Environment{}, errors.New("failed to read env")
+		return nil, errors.New("failed to read env")
 	}
 
 	DatabaseUrl := env["DATABASE_URL"]
 	AuthHeader := env["AUTH_HEADER"]
 
 	if DatabaseUrl == "" || AuthHeader == "" {
-		return &Environment{}, errors.New("failed to parse env")
+		return nil, errors.New("failed to parse env")
 	}
 
 	// Return valid environment

@@ -16,7 +16,6 @@ Run ```go run cmd/main.go```
 
 ### before release
 - functional auth, maybe a sign in
-- display logs on frontend
 
 ### after
 - context.TODO()

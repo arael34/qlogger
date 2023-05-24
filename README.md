@@ -2,12 +2,24 @@
 
 A simple logging client.
 
-### TODO
+## To set up locally
 
-# before release
-- make sure api calls are solid
-- db calls
-- auth
+Install go and git, then install deps with ```go get```
 
-# after
+Create .env file according to the example
+
+Run ```go run cmd/main.go```
+
+!! Important! make sure you're running from the root of the project, not the cmd folder.
+
+## TODO
+
+### before release
+- functional auth, maybe a sign in
+
+### after
+- context.TODO()
+- refresh button, websocket for realtime
+- maybe use something other than json for speed?
+- better auth handling
 - better error handling

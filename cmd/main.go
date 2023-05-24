@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func main() {
@@ -13,7 +15,7 @@ func main() {
 	fmt.Println()
 
 	// Grab environment variables
-	environment, envErr := ValidateEnvironment()
+	environment, envErr := qlogger.ValidateEnvironment()
 	if envErr != nil {
 		fmt.Println(envErr)
 		os.Exit(1)
@@ -23,9 +25,9 @@ func main() {
 	// Finish grabbing environment variables
 
 	// Connect to database
-	db, dbErr := qlogger.ConnectToDatabase(&environment.AuthHeader)
+	client, dbErr := qlogger.ConnectToDatabase(&environment.DatabaseUrl)
 	if dbErr != nil {
-		fmt.Println(envErr)
+		fmt.Println(dbErr)
 		os.Exit(1)
 	}
 
@@ -35,26 +37,14 @@ func main() {
 	 */
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt)
-	go func(db *qlogger.QLoggerDatabase) {
+	go func(db *mongo.Client) {
 		signal := <-sigc
-		db.Close()
 		fmt.Printf(
 			"recieved signal %v. successfully closed connections to database",
 			signal,
 		)
-		os.Exit(0)
-	}(db)
-
-	// On normal exit, close connection to db.
-	defer func(db *qlogger.QLoggerDatabase) {
-		db.Close()
-		fmt.Printf("successfully closed connection to database")
-	}(db)
-
-	if err := db.Handle.Ping(); err != nil {
-		fmt.Printf("failed to ping: %v", err)
-		os.Exit(db.Close())
-	}
+		os.Exit(qlogger.CloseDatabase(client, 0))
+	}(client)
 
 	fmt.Println("successfully pinged database.")
 	// Finish connecting to database
@@ -63,17 +53,20 @@ func main() {
 	fmt.Println()
 
 	// Set up routes
-	qlog := qlogger.NewQLogger(&environment.AuthHeader, db)
+	qlog := qlogger.NewQLogger(
+		&environment.AuthHeader,
+		client.Database("qlogger").Collection("logs"),
+	)
 
 	http.HandleFunc("/api/write/", qlog.WriteLog)
 	http.HandleFunc("/api/read/", qlog.ReadLog)
 
-	http.Handle("/", http.FileServer(http.Dir("../static")))
+	http.Handle("/", http.FileServer(http.Dir("./static/")))
 	// Finish setting up routes
 
 	serveErr := http.ListenAndServe(":3000", nil)
 	if serveErr != nil {
 		fmt.Printf("error serving: %v", serveErr)
-		os.Exit(db.Close())
+		os.Exit(qlogger.CloseDatabase(client, 1))
 	}
 }

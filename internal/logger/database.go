@@ -1,49 +1,37 @@
 package logger
 
 import (
-	"database/sql"
-	"errors"
-	"time"
+	"context"
 
-	_ "github.com/go-sql-driver/mysql"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type QLoggerDatabase struct {
-	Handle   *sql.DB
-	WriteLog *sql.Stmt
-	ReadLog  *sql.Stmt
+func CloseDatabase(c *mongo.Client, exitCode int) int {
+	if err := c.Disconnect(context.TODO()); err != nil {
+		panic(err)
+	}
+
+	// for use with os.Exit(CloseDatabase())
+	return exitCode
 }
 
-func (q *QLoggerDatabase) Close() int {
-	q.Handle.Close()
-	q.WriteLog.Close()
-	q.ReadLog.Close()
+func ConnectToDatabase(DatabaseUrl *string) (*mongo.Client, error) {
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+	opts := options.Client().ApplyURI(*DatabaseUrl).SetServerAPIOptions(serverAPI)
 
-	// for use with os.Exit(db.Close())
-	return 1
-}
-
-func ConnectToDatabase(DatabaseUrl *string) (*QLoggerDatabase, error) {
-	Handle, handleErr := sql.Open("mysql", *DatabaseUrl)
-	if handleErr != nil {
-		return nil, errors.New("error connecting to database.")
+	client, err := mongo.Connect(context.TODO(), opts)
+	if err != nil {
+		return nil, err
 	}
 
-	// Important settings
-	Handle.SetConnMaxLifetime(time.Minute * 3)
-	Handle.SetMaxOpenConns(10)
-	Handle.SetMaxIdleConns(10)
-
-	// Prepare statements
-	WriteLog, wErr := Handle.Prepare("INSERT INTO logs VALUES ( ?, ?, ? )")
-	if wErr != nil {
-		return nil, errors.New("error preparing write handle.")
+	// Ping database to confirm connection.
+	// The database name should prob be in the env
+	err = client.Database("qlogger").RunCommand(context.TODO(), bson.D{{Key: "ping", Value: 1}}).Err()
+	if err != nil {
+		return nil, err
 	}
 
-	ReadLog, rErr := Handle.Prepare("SELECT message FROM logs WHERE message = ?")
-	if rErr != nil {
-		return nil, errors.New("error preparing read handle.")
-	}
-
-	return &QLoggerDatabase{Handle, WriteLog, ReadLog}, nil
+	return client, nil
 }

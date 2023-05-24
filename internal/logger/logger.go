@@ -1,13 +1,18 @@
 package logger
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 /*
- * Simple int alias for readability.
+ * Simple alias for readability.
  * 0 - DEBUG
  * 1 - WARN
  * 2 - ERROR
@@ -23,10 +28,10 @@ const (
 // This probably isn't needed, I'm keeping it just in case
 type QLogger struct {
 	authHeader *string
-	database   *QLoggerDatabase
+	database   *mongo.Collection
 }
 
-func NewQLogger(authHeader *string, database *QLoggerDatabase) *QLogger {
+func NewQLogger(authHeader *string, database *mongo.Collection) *QLogger {
 	return &QLogger{authHeader, database}
 }
 
@@ -34,9 +39,9 @@ func NewQLogger(authHeader *string, database *QLoggerDatabase) *QLogger {
  * Schema for a single log entry.
  */
 type LogSchema struct {
-	Time    string // this needs to be changed to datetime
-	Message string
-	Level   Level
+	TimeWritten time.Time `bson:"time"`
+	Message     string    `bson:"message"`
+	Severity    Level     `bson:"severity"`
 }
 
 /*
@@ -44,9 +49,8 @@ type LogSchema struct {
  * Expects Authorization header.
  *
  * Expected body:
- *   Time: string (or datetime)
  *   Message: string
- *   Level: int
+ *   Severity: int
  */
 func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
@@ -54,6 +58,11 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "not authorized.", http.StatusUnauthorized)
 		return
 	}
+	if r.Method != "POST" {
+		http.Error(w, "method not allowed.", http.StatusMethodNotAllowed)
+	}
+
+	fmt.Println("writing...")
 
 	var log LogSchema
 
@@ -68,7 +77,15 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Received message %v with level %v\n", log.Message, log.Level)
+	log.TimeWritten = time.Now().UTC()
+
+	_, err = logger.database.InsertOne(context.TODO(), log)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println("wrote new log.")
 }
 
 /*
@@ -76,8 +93,8 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
  * Expects Authorization header.
  *
  * Return body:
- *   Array<{
- *     Time: string (or datetime)
+ *   data: Array<{
+ *     Time: datetime
  *     Message: string
  *     Level: int
  *   }>
@@ -88,18 +105,30 @@ func (logger *QLogger) ReadLog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "not authorized.", http.StatusUnauthorized)
 		return
 	}
+	if r.Method != "GET" {
+		http.Error(w, "method not allowed.", http.StatusMethodNotAllowed)
+	}
 
-	fmt.Printf("reading....\n")
+	fmt.Println("reading....")
 
-	// Set response header to JSON
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	cursor, err := logger.database.Find(context.TODO(), bson.D{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// TODO this has to fetch from db
 	var logs []LogSchema
-	err := json.NewEncoder(w).Encode(logs)
+	err = cursor.All(context.TODO(), &logs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(logs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	fmt.Printf("read all logs.")
 }

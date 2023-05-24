@@ -1,8 +1,13 @@
 # QLogger
 
-A simple logging abstraction.
+A simple logging client.
 
 ### TODO
-- frontend
+
+# before release
+- make sure api calls are solid
 - db calls
+- auth
+
+# after
 - better error handling

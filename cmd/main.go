@@ -69,6 +69,7 @@ func main() {
 	// Finish connecting to database
 
 	fmt.Println("\nready to go.")
+	fmt.Println()
 
 	// Set up routes
 	qlog := qlogger.NewQLogger(&environment.DatabaseUrl)

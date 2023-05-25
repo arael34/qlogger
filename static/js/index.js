@@ -10,6 +10,7 @@ $(document).ready(() => {
 function fetchLogData(_pw) {
   let pw = _pw;
   if (!pw) pw = $("input#password").val();
+  if (pw.length > 50) return;
 
   // Fetch log data
   $.ajax({

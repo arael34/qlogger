@@ -64,7 +64,13 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("./static/")))
 	// Finish setting up routes
 
-	serveErr := http.ListenAndServe(":3000", nil)
+	// For production
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = ":3000"
+	}
+
+	serveErr := http.ListenAndServe(":"+port, nil)
 	if serveErr != nil {
 		fmt.Printf("error serving: %v", serveErr)
 		os.Exit(qlogger.CloseDatabase(client, 1))

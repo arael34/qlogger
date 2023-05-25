@@ -25,7 +25,6 @@ const (
 	ERROR
 )
 
-// This probably isn't needed, I'm keeping it just in case
 type QLogger struct {
 	authHeader *string
 	database   *mongo.Collection
@@ -41,6 +40,7 @@ func NewQLogger(authHeader *string, database *mongo.Collection) *QLogger {
 type LogSchema struct {
 	TimeWritten time.Time `bson:"time"`
 	Message     string    `bson:"message"`
+	Origin      string    `bson:"origin"`
 	Severity    Level     `bson:"severity"`
 }
 
@@ -51,6 +51,7 @@ type LogSchema struct {
  * Expected body:
  *   Message: string
  *   Severity: int
+ *   Origin: string
  */
 func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
@@ -79,6 +80,7 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 
 	log.TimeWritten = time.Now().UTC()
 
+	// Insert schema into database.
 	_, err = logger.database.InsertOne(context.TODO(), log)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -111,12 +113,14 @@ func (logger *QLogger) ReadLog(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("reading....")
 
+	// To fetch every entry, set filter to bson.D{}.
 	cursor, err := logger.database.Find(context.TODO(), bson.D{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Parse documents as schema.
 	var logs []LogSchema
 	err = cursor.All(context.TODO(), &logs)
 	if err != nil {
@@ -124,11 +128,12 @@ func (logger *QLogger) ReadLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Return parsed schema as JSON.
 	err = json.NewEncoder(w).Encode(logs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	fmt.Printf("read all logs.")
+	fmt.Println("read all logs.")
 }

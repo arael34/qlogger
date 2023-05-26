@@ -142,7 +142,7 @@ func (logger *QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
 
 	// Parse documents as schema.
 	var logs []LogSchema
-	err = cursor.All(context.TODO(), &logs)
+	err = cursor.All(ctx, &logs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

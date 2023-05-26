@@ -21,3 +21,7 @@ Run ```go run cmd/main.go```
 - better auth handling
 - better error handling
 - cron jobs to clean old logs
+
+## cleaning
+
+- context

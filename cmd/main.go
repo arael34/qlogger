@@ -59,7 +59,7 @@ func main() {
 	)
 
 	http.HandleFunc("/api/write/", qlog.WriteLog)
-	http.HandleFunc("/api/read/", qlog.ReadLog)
+	http.HandleFunc("/api/read/", qlog.ReadLogs)
 
 	http.Handle("/", http.FileServer(http.Dir("./static/")))
 	// Finish setting up routes
@@ -67,7 +67,7 @@ func main() {
 	// For production
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = ":3000"
+		port = "3000"
 	}
 
 	serveErr := http.ListenAndServe(":"+port, nil)

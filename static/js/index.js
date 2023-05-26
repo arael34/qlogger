@@ -14,7 +14,7 @@ function fetchLogData(_pw) {
 
   // Fetch log data
   $.ajax({
-    url: `${window.location}/api/read`,
+    url: `${window.location}/api/read/`,
     method: "GET",
     headers: {"Authorization": pw},
     dataType: "json",

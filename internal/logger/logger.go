@@ -3,8 +3,8 @@ package logger
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -63,8 +63,6 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed.", http.StatusMethodNotAllowed)
 	}
 
-	fmt.Println("writing...")
-
 	var log LogSchema
 
 	// Limit body size to 1MB and disallow unknown JSON fields
@@ -80,28 +78,33 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 
 	log.TimeWritten = time.Now().UTC()
 
+	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(15*time.Second))
+	defer cancel()
+
 	// Insert schema into database.
-	_, err = logger.database.InsertOne(context.TODO(), log)
+	_, err = logger.database.InsertOne(ctx, log)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println("wrote new log.")
 }
 
 /*
  * Handler to read all logs. No body is necessary.
  * Expects Authorization header.
  *
+ * Filter through an optional query parameter.
+ *   ?severity={int}
+ *   ?origin={string} <- case sensitive
+ *
  * Return body:
  *   data: Array<{
  *     Time: datetime
  *     Message: string
- *     Level: int
+ *     Severity: int
  *   }>
  */
-func (logger *QLogger) ReadLog(w http.ResponseWriter, r *http.Request) {
+func (logger *QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
 	if r.Header.Get("Authorization") != *logger.authHeader {
 		http.Error(w, "not authorized.", http.StatusUnauthorized)
@@ -111,10 +114,27 @@ func (logger *QLogger) ReadLog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed.", http.StatusMethodNotAllowed)
 	}
 
-	fmt.Println("reading....")
+	query := r.URL.Query()
+	filter := bson.M{} // bson.M{} applies no filter.
 
-	// To fetch every entry, set filter to bson.D{}.
-	cursor, err := logger.database.Find(context.TODO(), bson.D{})
+	// Apply filters
+	if severity := query.Get("severity"); severity != "" {
+		filter["severity"] = severity
+
+		// Try to convert to an int
+		convertedSeverity, err := strconv.Atoi(severity)
+		if err == nil {
+			filter["severity"] = convertedSeverity
+		}
+	}
+	if origin := query.Get("origin"); origin != "" {
+		filter["origin"] = origin
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(15*time.Second))
+	defer cancel()
+
+	cursor, err := logger.database.Find(ctx, filter)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -128,12 +148,9 @@ func (logger *QLogger) ReadLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Return parsed schema as JSON.
 	err = json.NewEncoder(w).Encode(logs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	fmt.Println("read all logs.")
 }

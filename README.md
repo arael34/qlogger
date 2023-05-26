@@ -2,6 +2,8 @@
 
 A simple logging client.
 
+v 1.0.0
+
 ## To set up locally
 
 Install go and git, then install deps with ```go get```

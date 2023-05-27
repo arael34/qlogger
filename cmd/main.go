@@ -49,9 +49,6 @@ func main() {
 	fmt.Println("successfully pinged database.")
 	// Finish connecting to database
 
-	fmt.Println("\nready to go.")
-	fmt.Println()
-
 	// Set up routes
 	qlog := qlogger.NewQLogger(
 		&environment.AuthHeader,
@@ -69,6 +66,9 @@ func main() {
 	if port == "" {
 		port = "3000"
 	}
+
+	fmt.Println("\nready to go.")
+	fmt.Println()
 
 	serveErr := http.ListenAndServe(":"+port, nil)
 	if serveErr != nil {

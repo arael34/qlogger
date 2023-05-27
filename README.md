@@ -17,7 +17,6 @@ Run ```go run cmd/main.go```
 ## TODO
 
 - filter feature (frontend)
-- refresh button, websocket for realtime
 - page filter (50 a page)
 - maybe use something other than json for speed?
 - better auth handling

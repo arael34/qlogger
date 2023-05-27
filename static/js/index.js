@@ -12,9 +12,25 @@ function fetchLogData(_pw) {
   if (!pw) pw = $("input#password").val();
   if (pw.length > 50) return;
 
+  const url = `${window.location}api/read/`.replace("http", "ws"); 
+
+  const conn = new WebSocket(url);
+
+  conn.onopen = () => {
+    // Do something
+  };
+
+  conn.onerror = () => {
+    // Do something
+  };
+
+  conn.onmessage = () => {
+    // Do something
+  };
+
   // Fetch log data
   $.ajax({
-    url: `${window.location}/api/read/`,
+    url,
     method: "GET",
     headers: {"Authorization": pw},
     dataType: "json",

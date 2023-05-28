@@ -27,6 +27,7 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Method != "POST" {
 		http.Error(w, "method not allowed.", http.StatusMethodNotAllowed)
+		return
 	}
 
 	var log LogSchema

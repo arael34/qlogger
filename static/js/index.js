@@ -11,43 +11,41 @@ function fetchLogData(_pw) {
     if (!pw) {
         const input = $("input#password").val();
         if (typeof input !== "string" || input.length > 40) {
-            displayError();
+            displayError("invalid password");
             return;
         }
         pw = input;
     }
     
     const conn = new WebSocket(`${window.location}api/read/`.replace("http", "ws"), pw);
-    conn.onopen = () => {
+    conn.onopen = (ev) => {
         const log = $("#log");
         log.empty();
         $("#auth").hide();
-        // Display initial data.
     };
     conn.onerror = () => {
-        // Display error.
+        displayError("couldn't connect to websocket, or not authorized.");
     };
     conn.onmessage = (ev) => {
-        // Display message on frontend
+        displayData(JSON.parse(ev.data))
     };
 }
 
-function displayData(data) {
+function displayData(item) {
     const log = $("#log");
     // Loop through data fetched from backend
-    $.each(data, (_, item) => {
-        const element = $("<p>").text(`${item.Origin} @ ${item.TimeWritten}: ${item.Message}`);
-        // Highlight warn and error levels accordingly.
-        switch (item.Severity) {
-            case 1:
-                element.css("background-color", "yellow");
-                break;
-            case 2:
-                element.css("background-color", "red");
-        }
-        log.append(element);
-    });
+
+    const element = $("<p>").text(`${item.Origin} @ ${item.TimeWritten}: ${item.Message}`);
+    // Highlight warn and error levels accordingly.
+    switch (item.Severity) {
+        case 1:
+            element.css("background-color", "yellow");
+            break;
+        case 2:
+            element.css("background-color", "red");
+    }
+    log.append(element);
 }
-function displayError() {
-    console.log();
+function displayError(message) {
+    console.log(message);
 }

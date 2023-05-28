@@ -62,7 +62,7 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 
 /*
  * Handler to read all logs. No body is necessary.
- * Expects Authorization header.
+ * Expects Sec-WebSocket-Protocol header (for auth).
  *
  * Filter through an optional query parameter.
  *   ?severity={int}
@@ -77,7 +77,7 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
  */
 func (logger *QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
-	if r.Header.Get("Authorization") != *logger.authHeader {
+	if r.Header.Get("Sec-WebSocket-Protocol") != *logger.authHeader {
 		http.Error(w, "not authorized", http.StatusUnauthorized)
 		return
 	}

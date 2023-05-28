@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -9,7 +10,10 @@ import (
 )
 
 func CloseDatabase(c *mongo.Client, exitCode int) int {
-	if err := c.Disconnect(context.TODO()); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
+	defer cancel()
+
+	if err := c.Disconnect(ctx); err != nil {
 		panic(err)
 	}
 
@@ -21,14 +25,17 @@ func ConnectToDatabase(DatabaseUrl *string) (*mongo.Client, error) {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(*DatabaseUrl).SetServerAPIOptions(serverAPI)
 
-	client, err := mongo.Connect(context.TODO(), opts)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(30*time.Second))
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	// Ping database to confirm connection.
 	// The database name should prob be in the env
-	err = client.Database("qlogger").RunCommand(context.TODO(), bson.D{{Key: "ping", Value: 1}}).Err()
+	err = client.Database("qlogger").RunCommand(ctx, bson.D{{Key: "ping", Value: 1}}).Err()
 	if err != nil {
 		return nil, err
 	}

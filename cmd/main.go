@@ -15,9 +15,9 @@ func main() {
 	fmt.Println()
 
 	// Grab environment variables
-	environment, envErr := qlogger.ValidateEnvironment()
-	if envErr != nil {
-		fmt.Println(envErr)
+	environment, err := qlogger.ValidateEnvironment()
+	if err != nil {
+		fmt.Printf("Error loading environment: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -25,9 +25,9 @@ func main() {
 	// Finish grabbing environment variables
 
 	// Connect to database
-	client, dbErr := qlogger.ConnectToDatabase(&environment.DatabaseUrl)
-	if dbErr != nil {
-		fmt.Println(dbErr)
+	client, err := qlogger.ConnectToDatabase(&environment.DatabaseUrl)
+	if err != nil {
+		fmt.Printf("Error connecting to database: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -70,9 +70,9 @@ func main() {
 	fmt.Println("\nready to go.")
 	fmt.Println()
 
-	serveErr := http.ListenAndServe(":"+port, nil)
-	if serveErr != nil {
-		fmt.Printf("error serving: %v", serveErr)
+	err = http.ListenAndServe(":"+port, nil)
+	if err != nil {
+		fmt.Printf("error serving: %v", err)
 		os.Exit(qlogger.CloseDatabase(client, 1))
 	}
 }

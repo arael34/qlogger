@@ -25,7 +25,10 @@ func main() {
 	// Finish grabbing environment variables
 
 	// Connect to database
-	client, err := qlogger.ConnectToDatabase(&environment.DatabaseUrl)
+	client, err := qlogger.ConnectToDatabase(
+		&environment.DatabaseUrl,
+		&environment.DatabaseName,
+	)
 	if err != nil {
 		fmt.Printf("Error connecting to database: %v\n", err)
 		os.Exit(1)

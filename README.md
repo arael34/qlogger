@@ -2,7 +2,7 @@
 
 A simple logging client.
 
-v 1.0.0
+v 1.0.1
 
 ## To set up locally
 
@@ -20,6 +20,7 @@ Then run ```./out/``` for mac/linux or ```out.exe``` on windows.
 
 ## TODO
 
+- fix dockerfile
 - page feature (50 a page)
 - maybe use something other than json for speed?
 - CheckOrigin in logger.go

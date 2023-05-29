@@ -1,21 +1,19 @@
-# !! This isn't finished
-
 FROM golang:latest
 
-# Create working directory
-WORKDIR /app
+# Set cwd
+WORKDIR /app/
 
-# Copy dependency management into dir
-COPY go.mod go.sum ./
-
-# Download deps
-RUN go mod download
-
-# Copy root dir into working dir
+# Copy everything from the current directory to the working directory
 COPY . /app/.
 
-# Build app
+# Download dependencies
+RUN go mod download
+
+# Build
 RUN go build -o out ./cmd/
 
-# Run app
+# Expose port 8080
+EXPOSE 8080
+
+# Run
 CMD ["./out"]

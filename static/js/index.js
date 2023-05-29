@@ -22,7 +22,8 @@ function fetchLogData(_pw, filter) {
         }
         pw = input;
     }
-    
+   
+    // This is horrible, but it works.
     const conn = new WebSocket(`${window.location}api/read/`.replace("http", "ws"), pw);
     conn.onopen = () => {
         $("#log-container").show();
@@ -53,6 +54,10 @@ function displayData(item) {
             element.css("background-color", "red");
     }
     log.prepend(element);
+
+    // Remove the last elements if there are more than 50
+    if (log.children().length > 50)
+        log.children().last().remove();
 }
 
 function displayError(message) { console.log(message); }

@@ -21,7 +21,11 @@ func CloseDatabase(c *mongo.Client, exitCode int) int {
 	return exitCode
 }
 
-func ConnectToDatabase(DatabaseUrl *string) (*mongo.Client, error) {
+func ConnectToDatabase(
+	DatabaseUrl *string,
+	DatabaseName *string,
+) (*mongo.Client, error) {
+
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(*DatabaseUrl).SetServerAPIOptions(serverAPI)
 
@@ -34,8 +38,7 @@ func ConnectToDatabase(DatabaseUrl *string) (*mongo.Client, error) {
 	}
 
 	// Ping database to confirm connection.
-	// The database name should prob be in the env
-	err = client.Database("qlogger").RunCommand(ctx, bson.D{{Key: "ping", Value: 1}}).Err()
+	err = client.Database(*DatabaseName).RunCommand(ctx, bson.D{{Key: "ping", Value: 1}}).Err()
 	if err != nil {
 		return nil, err
 	}

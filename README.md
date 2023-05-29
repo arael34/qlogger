@@ -20,7 +20,6 @@ Then run ```./out/``` for mac/linux or ```out.exe``` on windows.
 
 ## TODO
 
-- filter feature (frontend)
 - page feature (50 a page)
 - maybe use something other than json for speed?
 - CheckOrigin in logger.go
@@ -31,3 +30,4 @@ Then run ```./out/``` for mac/linux or ```out.exe``` on windows.
 ## cleaning
 
 - context
+- ws on frontend

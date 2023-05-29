@@ -34,14 +34,14 @@ function fetchLogData(_pw, filter) {
         displayError("couldn't connect to websocket, or not authorized.");
     };
     conn.onmessage = (ev) => {
-        if (!filter || ev.data.Origin.contains(filter))
-            displayData(JSON.parse(ev.data));
+        const parsedData = JSON.parse(ev.data);
+        if (!filter || parsedData.Origin.includes(filter))
+            displayData(parsedData);
     };
 }
 
 function displayData(item) {
     const log = $("#log");
-    // Loop through data fetched from backend
 
     const element = $("<p>").text(`${item.Origin} @ ${item.TimeWritten}: ${item.Message}`);
     // Highlight warn and error levels accordingly.
@@ -55,6 +55,4 @@ function displayData(item) {
     log.prepend(element);
 }
 
-function displayError(message) {
-    console.log(message);
-}
+function displayError(message) { console.log(message); }

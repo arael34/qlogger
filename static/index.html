@@ -11,11 +11,17 @@
         <div class="top-bar">
             <h1>QLogger</h1>
         </div>
-        <div id="log"></div>
+        <div id="log-container">
+            <label>
+                filter by:&nbsp;
+                <input type="text" id="filter" />
+            </label>
+            <div id="log"></div>
+        </div>
         <div id="auth">
             <label>
+                Password&nbsp;
                 <input id="password" type="password" />
-                Password
             </label>
             <button id="signin">sign in</button>
         </div>

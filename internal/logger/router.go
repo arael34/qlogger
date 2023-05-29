@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -65,16 +64,11 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
  * Handler to read all logs. No body is necessary.
  * Expects Sec-WebSocket-Protocol header (for auth).
  *
- * Filter through an optional query parameter.
- *   ?severity={int}
- *   ?origin={string} <- case sensitive
- *
- * Return body:
- *   data: Array<{
- *     Time: datetime
- *     Message: string
- *     Severity: int
- *   }>
+ * Return schema:
+ *   TimeWritten: datetime
+ *   Message: string
+ *   Origin: string
+ *   Severity: int
  */
 func (logger *QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
@@ -87,27 +81,11 @@ func (logger *QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := r.URL.Query()
-	filter := bson.M{} // bson.M{} applies no filter.
-
-	// Apply filters
-	if severity := query.Get("severity"); severity != "" {
-		filter["severity"] = severity
-
-		// Try to convert to an int
-		convertedSeverity, err := strconv.Atoi(severity)
-		if err == nil {
-			filter["severity"] = convertedSeverity
-		}
-	}
-	if origin := query.Get("origin"); origin != "" {
-		filter["origin"] = origin
-	}
-
 	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(15*time.Second))
 	defer cancel()
 
-	cursor, err := logger.database.Find(ctx, filter)
+	// bson.D{} applies no filter.
+	cursor, err := logger.database.Find(ctx, bson.D{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

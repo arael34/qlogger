@@ -2,11 +2,17 @@ $(document).on("DOMContentLoaded", () => {
     // Fetch auth token. If it exists, fetch data.
     const token = Cookies.get("LOGGER-AUTH");
     if (token)
-        fetchLogData(token);
+        fetchLogData(token, null);
+
+    $("#log-container").hide();
     // If the user needs to authenticate, listen for sign in.
-    $("button#signin").on("click", () => fetchLogData(null));
+    $("button#signin").on("click", () => fetchLogData(null, null));
+    $("input#filter").on("change", (ev) => {
+        fetchLogData(token, $(ev.target).val());
+    });
 });
-function fetchLogData(_pw) {
+
+function fetchLogData(_pw, filter) {
     let pw = _pw;
     if (!pw) {
         const input = $("input#password").val();
@@ -18,22 +24,24 @@ function fetchLogData(_pw) {
     }
     
     const conn = new WebSocket(`${window.location}api/read/`.replace("http", "ws"), pw);
-    conn.onopen = (ev) => {
-        const log = $("#log");
-        log.empty();
+    conn.onopen = () => {
+        $("#log-container").show();
+        $("#log").empty();
         $("#auth").hide();
+        Cookies.set("LOGGER-AUTH", pw, { expires: 1 });
     };
     conn.onerror = () => {
         displayError("couldn't connect to websocket, or not authorized.");
     };
     conn.onmessage = (ev) => {
-        displayData(JSON.parse(ev.data))
+        const parsedData = JSON.parse(ev.data);
+        if (!filter || parsedData.Origin.includes(filter))
+            displayData(parsedData);
     };
 }
 
 function displayData(item) {
     const log = $("#log");
-    // Loop through data fetched from backend
 
     const element = $("<p>").text(`${item.Origin} @ ${item.TimeWritten}: ${item.Message}`);
     // Highlight warn and error levels accordingly.
@@ -44,8 +52,7 @@ function displayData(item) {
         case 2:
             element.css("background-color", "red");
     }
-    log.append(element);
+    log.prepend(element);
 }
-function displayError(message) {
-    console.log(message);
-}
+
+function displayError(message) { console.log(message); }

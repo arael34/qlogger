@@ -1,26 +1,20 @@
 $(document).on("DOMContentLoaded", () => {
-    // Fetch auth token. If it exists, fetch data.
-    const token = Cookies.get("LOGGER-AUTH");
-    if (token)
-        fetchLogData(token, null);
+    fetchLogData(null);
 
     $("#log-container").hide();
     // If the user needs to authenticate, listen for sign in.
-    $("button#signin").on("click", () => fetchLogData(null, null));
+    $("button#signin").on("click", () => fetchLogData(null));
     $("input#filter").on("change", (ev) => {
-        fetchLogData(token, $(ev.target).val());
+        fetchLogData($(ev.target).val());
     });
 });
 
-function fetchLogData(_pw, filter) {
-    let pw = _pw;
-    if (!pw) {
-        const input = $("input#password").val();
-        if (typeof input !== "string" || input.length > 40) {
-            displayError("invalid password");
-            return;
-        }
-        pw = input;
+function fetchLogData(filter) {
+    const pw = Cookies.get("LOGGER-AUTH") || $("input#password").val();
+    // Filter out potential bad passwords.
+    if (!pw || typeof pw !== "string" || pw.length > 40) {
+        displayError("invalid password");
+        return;
     }
    
     // This is horrible, but it works.
@@ -43,7 +37,6 @@ function fetchLogData(_pw, filter) {
 
 function displayData(item) {
     const log = $("#log");
-
     const element = $("<p>").text(`${item.Origin} @ ${item.TimeWritten}: ${item.Message}`);
     // Highlight warn and error levels accordingly.
     switch (item.Severity) {
@@ -54,10 +47,9 @@ function displayData(item) {
             element.css("background-color", "red");
     }
     log.prepend(element);
-
-    // Remove the last elements if there are more than 50
+    // Remove the last element if there are more than 50
     if (log.children().length > 50)
         log.children().last().remove();
 }
 
-function displayError(message) { console.log(message); }
+function displayError(message) { console.error(message); }

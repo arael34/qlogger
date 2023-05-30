@@ -12,8 +12,8 @@ RUN go mod download
 # Build
 RUN go build -o out ./cmd/
 
-# Expose port 8080
-EXPOSE 8080
+# This isn't needed for certain hosting services.
+# EXPOSE 8080
 
 # Run
 CMD ["./out"]

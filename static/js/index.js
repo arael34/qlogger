@@ -37,11 +37,16 @@ function fetchLogData(filter) {
 
 function displayData(item) {
     const log = $("#log");
-    const element = $("<p>").text(`${item.Origin} @ ${item.TimeWritten}: ${item.Message}`);
+    const element = $("<p>").text(
+        `   ${item.Category}    ${item.Origin} @ ${item.TimeWritten}: ${item.Message}`
+    );
     // Highlight warn and error levels accordingly.
     switch (item.Severity) {
         case 1:
             element.css("background-color", "yellow");
+            break;
+        case 2:
+            element.css("background-color", "orange");
             break;
         case 2:
             element.css("background-color", "red");

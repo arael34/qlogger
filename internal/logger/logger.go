@@ -11,14 +11,16 @@ import (
 
 /*
  * Simple alias for readability.
- * 0 - DEBUG
- * 1 - WARN
- * 2 - ERROR
+ * 0 - INFO
+ * 1 - DEBUG
+ * 2 - WARN
+ * 3 - ERROR
  */
 type Level int
 
 const (
-	DEBUG Level = iota
+	INFO Level = iota
+	DEBUG
 	WARN
 	ERROR
 )
@@ -46,9 +48,10 @@ func NewQLogger(authHeader *string, database *mongo.Collection) *QLogger {
  */
 type LogSchema struct {
 	TimeWritten time.Time `bson:"time"`
-	Message     string    `bson:"message"`
 	Origin      string    `bson:"origin"`
+	Category    string    `bson:"category"`
 	Severity    Level     `bson:"severity"`
+	Message     string    `bson:"message"`
 }
 
 func (logger *QLogger) HandleSocket(conn *websocket.Conn) {

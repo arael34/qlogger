@@ -38,7 +38,7 @@ function fetchLogData(filter) {
 function displayData(item) {
     const log = $("#log");
     const element = $("<p>").text(
-        `   ${item.Category}    ${item.Origin} @ ${item.TimeWritten}: ${item.Message}`
+        `${item.Origin}/${item.Category} @ ${item.TimeWritten}: ${item.Message}`
     );
     // Highlight warn and error levels accordingly.
     switch (item.Severity) {

@@ -11,15 +11,14 @@ import (
 
 // I want this to be like app.WithEnv().WithDatabase().WithRoutes().Build().Run()
 type App struct {
-	environment *Environment
-	client      *mongo.Client
-	logger      *types.QLogger
+	client *mongo.Client
+	logger *types.QLogger
 }
 
 func (app *App) Run() error {
 	// Set up routes
-	http.HandleFunc("/api/write/", app.logger.WriteLog)
-	http.HandleFunc("/api/read/", app.logger.ReadLogs)
+	http.HandleFunc("/api/write/", app.WriteLog)
+	http.HandleFunc("/api/read/", app.ReadLogs)
 
 	http.Handle("/", http.FileServer(http.Dir("./static/")))
 
@@ -29,7 +28,7 @@ func (app *App) Run() error {
 		port = "3000"
 	}
 
-	fmt.Println("\nready to go.\n")
+	fmt.Println("\nready to go.")
 
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {

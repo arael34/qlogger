@@ -19,9 +19,9 @@ import (
  *   Severity: int
  *   Origin: string
  */
-func (logger *types.QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
+func (app *App) WriteLog(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
-	if r.Header.Get("Authorization") != *logger.authHeader {
+	if r.Header.Get("Authorization") != *app.logger.AuthHeader {
 		http.Error(w, "not authorized.", http.StatusUnauthorized)
 		return
 	}
@@ -49,15 +49,15 @@ func (logger *types.QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// Insert schema into database.
-	_, err = logger.database.InsertOne(ctx, log)
+	_, err = app.logger.Database.InsertOne(ctx, log)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// If there is a current read connection open, write to it.
-	if logger.conn != nil {
-		logger.conn.WriteJSON(log)
+	if app.logger.Conn != nil {
+		app.logger.Conn.WriteJSON(log)
 	}
 }
 
@@ -71,9 +71,9 @@ func (logger *types.QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
  *   Origin: string
  *   Severity: int
  */
-func (logger *types.QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
+func (app *App) ReadLogs(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
-	if r.Header.Get("Sec-WebSocket-Protocol") != *logger.authHeader {
+	if r.Header.Get("Sec-WebSocket-Protocol") != *app.logger.AuthHeader {
 		http.Error(w, "not authorized", http.StatusUnauthorized)
 		return
 	}
@@ -86,7 +86,7 @@ func (logger *types.QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// bson.D{} applies no filter.
-	cursor, err := logger.database.Find(ctx, bson.D{})
+	cursor, err := app.logger.Database.Find(ctx, bson.D{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -101,16 +101,16 @@ func (logger *types.QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Connect to websocket for realtime updates.
-	conn, err := logger.upgrader.Upgrade(w, r, nil)
+	conn, err := app.logger.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
 	defer conn.Close()
-	logger.conn = conn
+	app.logger.Conn = conn
 
 	for _, log := range logs {
 		conn.WriteJSON(log)
 	}
 
-	logger.HandleSocket(conn)
+	app.logger.HandleSocket(conn)
 }

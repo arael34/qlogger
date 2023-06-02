@@ -1,4 +1,4 @@
-package app
+package types
 
 import (
 	"fmt"
@@ -26,10 +26,10 @@ const (
 )
 
 type QLogger struct {
-	authHeader *string
-	database   *mongo.Collection
-	upgrader   *websocket.Upgrader
-	conn       *websocket.Conn
+	AuthHeader *string
+	Database   *mongo.Collection
+	Upgrader   *websocket.Upgrader
+	Conn       *websocket.Conn
 }
 
 func NewQLogger(authHeader *string, database *mongo.Collection) *QLogger {
@@ -47,11 +47,11 @@ func NewQLogger(authHeader *string, database *mongo.Collection) *QLogger {
  * Schema for a single log entry.
  */
 type LogSchema struct {
-	TimeWritten time.Time `bson:"time" json:"time"`
-	Origin      string    `bson:"origin" json:"origin"`
-	Category    string    `bson:"category" json:"category"`
-	Severity    Level     `bson:"severity" json:"severity"`
-	Message     string    `bson:"message" json:"message"`
+	TimeWritten time.Time `bson:"time"`
+	Origin      string    `bson:"origin"`
+	Category    string    `bson:"category"`
+	Severity    Level     `bson:"severity"`
+	Message     string    `bson:"message"`
 }
 
 func (logger *QLogger) HandleSocket(conn *websocket.Conn) {

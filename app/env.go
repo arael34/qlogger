@@ -1,4 +1,4 @@
-package logger
+package app
 
 import (
 	"errors"
@@ -8,8 +8,9 @@ import (
 )
 
 type Environment struct {
-	DatabaseUrl string
-	AuthHeader  string
+	DatabaseUrl  string
+	DatabaseName string
+	AuthHeader   string
 }
 
 func ValidateEnvironment() (*Environment, error) {
@@ -17,13 +18,14 @@ func ValidateEnvironment() (*Environment, error) {
 	// will be set in the OS env.
 	if os.Getenv("ENV") == "PROD" {
 		DatabaseUrl := os.Getenv("DATABASE_URL")
+		DatabaseName := os.Getenv("DATABASE_NAME")
 		AuthHeader := os.Getenv("AUTH_HEADER")
 
 		if DatabaseUrl == "" || AuthHeader == "" {
 			return nil, errors.New("failed to parse production env")
 		}
 
-		return &Environment{DatabaseUrl, AuthHeader}, nil
+		return &Environment{DatabaseUrl, DatabaseName, AuthHeader}, nil
 	}
 
 	// Parse .env
@@ -34,12 +36,12 @@ func ValidateEnvironment() (*Environment, error) {
 	}
 
 	DatabaseUrl := env["DATABASE_URL"]
+	DatabaseName := env["DATABASE_NAME"]
 	AuthHeader := env["AUTH_HEADER"]
 
-	if DatabaseUrl == "" || AuthHeader == "" {
+	if DatabaseUrl == "" || DatabaseName == "" || AuthHeader == "" {
 		return nil, errors.New("failed to parse local env")
 	}
 
-	// Return valid environment
-	return &Environment{DatabaseUrl, AuthHeader}, nil
+	return &Environment{DatabaseUrl, DatabaseName, AuthHeader}, nil
 }

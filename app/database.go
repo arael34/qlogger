@@ -1,8 +1,10 @@
-package logger
+package app
 
 import (
 	"context"
-	"time"
+	"fmt"
+	"os"
+	"os/signal"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -10,10 +12,7 @@ import (
 )
 
 func CloseDatabase(c *mongo.Client, exitCode int) int {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Second))
-	defer cancel()
-
-	if err := c.Disconnect(ctx); err != nil {
+	if err := c.Disconnect(context.Background()); err != nil {
 		panic(err)
 	}
 
@@ -29,19 +28,31 @@ func ConnectToDatabase(
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(*DatabaseUrl).SetServerAPIOptions(serverAPI)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(30*time.Second))
-	defer cancel()
-
-	client, err := mongo.Connect(ctx, opts)
+	client, err := mongo.Connect(context.Background(), opts)
 	if err != nil {
 		return nil, err
 	}
 
 	// Ping database to confirm connection.
-	err = client.Database(*DatabaseName).RunCommand(ctx, bson.D{{Key: "ping", Value: 1}}).Err()
+	err = client.Database(*DatabaseName).RunCommand(context.Background(), bson.D{{Key: "ping", Value: 1}}).Err()
 	if err != nil {
 		return nil, err
 	}
+
+	/*
+	 * Handle graceful exit on SIGTERM or SIGINT.
+	 * without this, the database connection won't close properly.
+	 */
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, os.Interrupt)
+	go func(db *mongo.Client) {
+		signal := <-sigc
+		fmt.Printf(
+			"recieved signal %v. successfully closed connections to database",
+			signal,
+		)
+		os.Exit(CloseDatabase(client, 0))
+	}(client)
 
 	return client, nil
 }

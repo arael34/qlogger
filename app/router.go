@@ -1,4 +1,4 @@
-package logger
+package app
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/arael34/qlogger/types"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -18,7 +19,7 @@ import (
  *   Severity: int
  *   Origin: string
  */
-func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
+func (logger *types.QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
 	if r.Header.Get("Authorization") != *logger.authHeader {
 		http.Error(w, "not authorized.", http.StatusUnauthorized)
@@ -29,7 +30,7 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var log LogSchema
+	var log types.LogSchema
 
 	// Limit body size to 1MB and disallow unknown JSON fields
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1048576))
@@ -70,7 +71,7 @@ func (logger *QLogger) WriteLog(w http.ResponseWriter, r *http.Request) {
  *   Origin: string
  *   Severity: int
  */
-func (logger *QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
+func (logger *types.QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
 	if r.Header.Get("Sec-WebSocket-Protocol") != *logger.authHeader {
 		http.Error(w, "not authorized", http.StatusUnauthorized)
@@ -92,7 +93,7 @@ func (logger *QLogger) ReadLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse documents as schema.
-	var logs []LogSchema
+	var logs []types.LogSchema
 	err = cursor.All(ctx, &logs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

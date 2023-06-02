@@ -10,7 +10,7 @@ COPY . /app/.
 RUN go mod download
 
 # Build
-RUN go build -o out ./cmd/
+RUN go build -o out
 
 # This isn't needed for certain hosting services.
 # EXPOSE 8080

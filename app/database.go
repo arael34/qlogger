@@ -26,7 +26,10 @@ func ConnectToDatabase(
 ) (*mongo.Client, error) {
 
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(*DatabaseUrl).SetServerAPIOptions(serverAPI)
+	opts := options.
+		Client().
+		ApplyURI(*DatabaseUrl).
+		SetServerAPIOptions(serverAPI)
 
 	client, err := mongo.Connect(context.Background(), opts)
 	if err != nil {
@@ -34,7 +37,11 @@ func ConnectToDatabase(
 	}
 
 	// Ping database to confirm connection.
-	err = client.Database(*DatabaseName).RunCommand(context.Background(), bson.D{{Key: "ping", Value: 1}}).Err()
+	err = client.
+		Database(*DatabaseName).
+		RunCommand(context.Background(), bson.D{{Key: "ping", Value: 1}}).
+		Err()
+
 	if err != nil {
 		return nil, err
 	}

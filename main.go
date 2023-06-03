@@ -25,9 +25,17 @@ func main() {
 	}
 	fmt.Println("pinged database.")
 
-	logger := types.NewQLogger(&env.AuthHeader, client.Database(env.DatabaseName).Collection("logs"))
+	logger := types.NewQLogger(
+		&env.AuthHeader,
+		client.Database(env.DatabaseName).Collection("logs"),
+	)
 
-	app, err := pkg.NewAppBuilder().WithClient(client).WithLogger(logger).Build()
+	app, err := pkg.
+		NewAppBuilder().
+		WithClient(client).
+		WithLogger(logger).
+		Build()
+
 	if err != nil {
 		fmt.Printf("Error building app: %v\n", err)
 		os.Exit(pkg.CloseDatabase(client, 1))

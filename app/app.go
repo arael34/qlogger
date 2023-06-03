@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// I want this to be like app.WithEnv().WithDatabase().WithRoutes().Build().Run()
 type App struct {
 	client *mongo.Client
 	logger *types.QLogger

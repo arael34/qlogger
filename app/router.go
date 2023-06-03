@@ -45,7 +45,10 @@ func (app *App) WriteLog(w http.ResponseWriter, r *http.Request) {
 
 	log.TimeWritten = time.Now().UTC()
 
-	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(15*time.Second))
+	ctx, cancel := context.WithTimeout(
+		r.Context(),
+		time.Duration(15*time.Second),
+	)
 	defer cancel()
 
 	// Insert schema into database.
@@ -82,7 +85,10 @@ func (app *App) ReadLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(15*time.Second))
+	ctx, cancel := context.WithTimeout(
+		r.Context(),
+		time.Duration(15*time.Second),
+	)
 	defer cancel()
 
 	// bson.D{} applies no filter.

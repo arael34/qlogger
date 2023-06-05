@@ -59,9 +59,11 @@ func (app *App) WriteLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If there is a current read connection open, write to it.
-	if app.logger.Conn != nil {
-		app.logger.Conn.WriteJSON(log)
+	app.logger.ConnSync.Lock()
+	for _, conn := range app.logger.Connections {
+		conn.WriteJSON(log)
 	}
+	app.logger.ConnSync.Unlock()
 }
 
 /*
@@ -111,8 +113,11 @@ func (app *App) ReadLogs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	defer conn.Close()
-	app.logger.Conn = conn
+	defer app.logger.CleanUp(conn)
+
+	app.logger.ConnSync.Lock()
+	app.logger.Connections = append(app.logger.Connections, conn)
+	app.logger.ConnSync.Unlock()
 
 	for _, log := range logs {
 		conn.WriteJSON(log)

@@ -18,7 +18,6 @@ Then run ```./out/``` for mac/linux or ```out.exe``` on windows.
 
 ## TODO
 
-- write & store multiple websocket connections
 - page feature (50 a page)
 - maybe use something other than json for speed?
 - CheckOrigin in logger.go

@@ -1,10 +1,11 @@
+# This dockerfile runs the portal.
 FROM golang:latest
 
 # Set cwd
 WORKDIR /app/
 
-# Copy everything from the current directory to the working directory
-COPY . /app/.
+# Copy everything from the portal directory to the working directory
+COPY ./_portal/ /app/.
 
 # Download dependencies
 RUN go mod download

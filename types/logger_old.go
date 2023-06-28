@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gorilla/websocket"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -43,17 +42,6 @@ func NewQLogger(authHeader *string, database *mongo.Collection) *QLogger {
 	}
 
 	return &QLogger{authHeader, database, upgrader, sync.Mutex{}, nil}
-}
-
-/*
- * Schema for a single log entry.
- */
-type LogSchema struct {
-	TimeWritten time.Time `bson:"time"`
-	Origin      string    `bson:"origin"`
-	Category    string    `bson:"category"`
-	Severity    Level     `bson:"severity"`
-	Message     string    `bson:"message"`
 }
 
 func (logger *QLogger) HandleSocket(conn *websocket.Conn) {

@@ -1,9 +1,10 @@
-package middleware
+package logger
 
 import (
 	"context"
 	"time"
 
+	"github.com/jonasiwnl/qlogger/types"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -11,7 +12,7 @@ type mongoWrapper struct {
 	collection *mongo.Collection
 }
 
-func (m mongoWrapper) Write(ctx context.Context, log LogSchema) error {
+func (m mongoWrapper) Write(ctx context.Context, log types.LogSchema) error {
 	ctx, cancel := context.WithTimeout(
 		ctx,
 		time.Duration(15*time.Second),
@@ -22,7 +23,6 @@ func (m mongoWrapper) Write(ctx context.Context, log LogSchema) error {
 	return err
 }
 
-func NewMongoMiddleware(collection *mongo.Collection) QMiddleware {
-	var database Database = mongoWrapper{collection: collection}
-	return QMiddleware{database}
+func NewMongoDatabase(collection *mongo.Collection) types.Database {
+	return mongoWrapper{collection: collection}
 }

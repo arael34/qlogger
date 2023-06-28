@@ -1,10 +1,9 @@
-package logger
+package lib
 
 import (
 	"context"
 	"time"
 
-	"github.com/jonasiwnl/qlogger/types"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -12,7 +11,7 @@ type mongoWrapper struct {
 	collection *mongo.Collection
 }
 
-func (m mongoWrapper) Write(ctx context.Context, log types.LogSchema) error {
+func (m mongoWrapper) Write(ctx context.Context, log LogSchema) error {
 	ctx, cancel := context.WithTimeout(
 		ctx,
 		time.Duration(15*time.Second),
@@ -23,6 +22,6 @@ func (m mongoWrapper) Write(ctx context.Context, log types.LogSchema) error {
 	return err
 }
 
-func NewMongoDatabase(collection *mongo.Collection) types.Database {
+func NewMongoDatabase(collection *mongo.Collection) Database {
 	return mongoWrapper{collection: collection}
 }

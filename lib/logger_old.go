@@ -1,4 +1,4 @@
-package types
+package lib
 
 import (
 	"fmt"
@@ -9,23 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-/*
- * Simple alias for readability.
- * 0 - INFO
- * 1 - DEBUG
- * 2 - WARN
- * 3 - ERROR
- */
-type Level int
-
-const (
-	INFO Level = iota
-	DEBUG
-	WARN
-	ERROR
-)
-
-type QLogger struct {
+type _QLogger struct {
 	AuthHeader  *string
 	Database    *mongo.Collection
 	Upgrader    *websocket.Upgrader
@@ -33,7 +17,7 @@ type QLogger struct {
 	Connections []*websocket.Conn
 }
 
-func NewQLogger(authHeader *string, database *mongo.Collection) *QLogger {
+func _NewQLogger(authHeader *string, database *mongo.Collection) *_QLogger {
 	upgrader := &websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -41,7 +25,7 @@ func NewQLogger(authHeader *string, database *mongo.Collection) *QLogger {
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
 
-	return &QLogger{authHeader, database, upgrader, sync.Mutex{}, nil}
+	return &_QLogger{authHeader, database, upgrader, sync.Mutex{}, nil}
 }
 
 func (logger *QLogger) HandleSocket(conn *websocket.Conn) {
@@ -59,7 +43,7 @@ func (logger *QLogger) HandleSocket(conn *websocket.Conn) {
 	}
 }
 
-func (logger *QLogger) CleanUp(conn *websocket.Conn) {
+func (logger *_QLogger) CleanUp(conn *websocket.Conn) {
 	logger.ConnSync.Lock()
 	defer logger.ConnSync.Unlock()
 

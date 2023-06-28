@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	pkg "github.com/arael34/qlogger/app"
-	"github.com/arael34/qlogger/types"
+	pkg "github.com/jonasiwnl/qlogger/app"
+	"github.com/jonasiwnl/qlogger/types"
 )
 
 func main() {

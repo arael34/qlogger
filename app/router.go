@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/arael34/qlogger/types"
+	"github.com/jonasiwnl/qlogger/types"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

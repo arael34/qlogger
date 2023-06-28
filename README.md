@@ -18,7 +18,9 @@ Then run ```./out/``` for mac/linux or ```out.exe``` on windows.
 
 ## TODO
 
-- page feature (50 a page)
+- custom schema, like Logger.WithSchema(schema)
+- middleware, like http.WithMiddleWare
+
 - maybe use something other than json for speed?
 - CheckOrigin in logger.go
 - better auth handling

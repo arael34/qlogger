@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/arael34/qlogger/types"
+	"github.com/jonasiwnl/qlogger/types"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -22,7 +22,7 @@ func (app *App) Run() error {
 	http.HandleFunc("/api/write/", app.WriteLog)
 	http.HandleFunc("/api/read/", app.ReadLogs)
 
-	http.Handle("/", http.FileServer(http.Dir("./static/")))
+	http.Handle("/", http.FileServer(http.Dir("./app/static/")))
 
 	// For production
 	port := os.Getenv("PORT")

@@ -101,6 +101,16 @@ func (app *App) ReadLogsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*
+ * Handler to read top priority categories.
+ * Expects Authorization header.
+ *
+ * Return schema:
+ *   TimeWritten: datetime
+ *   Message: string
+ *   Category: string
+ *   Severity: int
+ */
 func (app *App) PrioritiesHandler(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
 	if r.Header.Get("Authorization") != *app.logger.AuthHeader {
@@ -112,14 +122,7 @@ func (app *App) PrioritiesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// bson.M{} applies no filter.
-	filter := bson.M{}
-
-	for k, v := range r.URL.Query() {
-		filter[k] = v[0]
-	}
-
-	logs, err := app.ReadLogs(r.Context(), filter)
+	categories, err := app.FindPriority(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -127,7 +130,7 @@ func (app *App) PrioritiesHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Write logs to client.
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(logs)
+	err = json.NewEncoder(w).Encode(categories)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -1,4 +1,4 @@
-package app
+package main
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/arael34/qlogger/types"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -14,13 +13,14 @@ import (
 
 type App struct {
 	client *mongo.Client
-	logger *types.QLogger
+	logger *QLogger
 }
 
 func (app *App) Run() error {
 	// Set up routes
-	http.HandleFunc("/api/write/", app.WriteLog)
-	http.HandleFunc("/api/read/", app.ReadLogs)
+	http.HandleFunc("/api/write/", app.WriteLogHandler)
+	http.HandleFunc("/api/read/", app.ReadLogsHandler)
+	http.HandleFunc("/api/insights/priorities/", app.PrioritiesHandler)
 
 	http.Handle("/", http.FileServer(http.Dir("./static/")))
 
@@ -45,7 +45,7 @@ func (app *App) Run() error {
 
 type AppBuilder struct {
 	client *mongo.Client
-	logger *types.QLogger
+	logger *QLogger
 }
 
 func NewAppBuilder() *AppBuilder {
@@ -57,7 +57,7 @@ func (ab *AppBuilder) WithClient(client *mongo.Client) *AppBuilder {
 	return ab
 }
 
-func (ab *AppBuilder) WithLogger(logger *types.QLogger) *AppBuilder {
+func (ab *AppBuilder) WithLogger(logger *QLogger) *AppBuilder {
 	ab.logger = logger
 	return ab
 }

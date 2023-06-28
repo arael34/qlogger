@@ -1,4 +1,4 @@
-package app
+package main
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/arael34/qlogger/types"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -19,7 +18,7 @@ import (
  *   Severity: int
  *   Origin: string
  */
-func (app *App) WriteLog(w http.ResponseWriter, r *http.Request) {
+func (app *App) WriteLogHandler(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
 	if r.Header.Get("Authorization") != *app.logger.AuthHeader {
 		http.Error(w, "not authorized.", http.StatusUnauthorized)
@@ -30,7 +29,7 @@ func (app *App) WriteLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var log types.LogSchema
+	var log LogSchema
 
 	// Limit body size to 1MB and disallow unknown JSON fields
 	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1048576))
@@ -57,28 +56,21 @@ func (app *App) WriteLog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	// If there is a current read connection open, write to it.
-	app.logger.ConnSync.Lock()
-	for _, conn := range app.logger.Connections {
-		conn.WriteJSON(log)
-	}
-	app.logger.ConnSync.Unlock()
 }
 
 /*
  * Handler to read all logs. No body is necessary.
- * Expects Sec-WebSocket-Protocol header (for auth).
+ * Expects Authorization header.
  *
  * Return schema:
  *   TimeWritten: datetime
  *   Message: string
- *   Origin: string
+ *   Category: string
  *   Severity: int
  */
-func (app *App) ReadLogs(w http.ResponseWriter, r *http.Request) {
+func (app *App) ReadLogsHandler(w http.ResponseWriter, r *http.Request) {
 	// Authorize user.
-	if r.Header.Get("Sec-WebSocket-Protocol") != *app.logger.AuthHeader {
+	if r.Header.Get("Authorization") != *app.logger.AuthHeader {
 		http.Error(w, "not authorized", http.StatusUnauthorized)
 		return
 	}
@@ -87,41 +79,57 @@ func (app *App) ReadLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(
-		r.Context(),
-		time.Duration(15*time.Second),
-	)
-	defer cancel()
+	// bson.M{} applies no filter.
+	filter := bson.M{}
 
-	// bson.D{} applies no filter.
-	cursor, err := app.logger.Database.Find(ctx, bson.D{})
+	for k, v := range r.URL.Query() {
+		filter[k] = v[0]
+	}
+
+	logs, err := app.ReadLogs(r.Context(), filter)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Parse documents as schema.
-	var logs []types.LogSchema
-	err = cursor.All(ctx, &logs)
+	// Write logs to client.
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(logs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (app *App) PrioritiesHandler(w http.ResponseWriter, r *http.Request) {
+	// Authorize user.
+	if r.Header.Get("Authorization") != *app.logger.AuthHeader {
+		http.Error(w, "not authorized", http.StatusUnauthorized)
+		return
+	}
+	if r.Method != "GET" {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// bson.M{} applies no filter.
+	filter := bson.M{}
+
+	for k, v := range r.URL.Query() {
+		filter[k] = v[0]
+	}
+
+	logs, err := app.ReadLogs(r.Context(), filter)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Connect to websocket for realtime updates.
-	conn, err := app.logger.Upgrader.Upgrade(w, r, nil)
+	// Write logs to client.
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(logs)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer app.logger.CleanUp(conn)
-
-	app.logger.ConnSync.Lock()
-	app.logger.Connections = append(app.logger.Connections, conn)
-	app.logger.ConnSync.Unlock()
-
-	for _, log := range logs {
-		conn.WriteJSON(log)
-	}
-
-	app.logger.HandleSocket(conn)
 }

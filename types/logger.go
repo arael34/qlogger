@@ -1,15 +1,32 @@
-package lib
+package types
 
 import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type _QLogger struct {
+/*
+ * Simple alias for readability.
+ * 0 - INFO
+ * 1 - DEBUG
+ * 2 - WARN
+ * 3 - ERROR
+ */
+type Level int
+
+const (
+	INFO Level = iota
+	DEBUG
+	WARN
+	ERROR
+)
+
+type QLogger struct {
 	AuthHeader  *string
 	Database    *mongo.Collection
 	Upgrader    *websocket.Upgrader
@@ -17,7 +34,7 @@ type _QLogger struct {
 	Connections []*websocket.Conn
 }
 
-func _NewQLogger(authHeader *string, database *mongo.Collection) *_QLogger {
+func NewQLogger(authHeader *string, database *mongo.Collection) *QLogger {
 	upgrader := &websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -25,7 +42,18 @@ func _NewQLogger(authHeader *string, database *mongo.Collection) *_QLogger {
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
 
-	return &_QLogger{authHeader, database, upgrader, sync.Mutex{}, nil}
+	return &QLogger{authHeader, database, upgrader, sync.Mutex{}, nil}
+}
+
+/*
+ * Schema for a single log entry.
+ */
+type LogSchema struct {
+	TimeWritten time.Time `bson:"time"`
+	Origin      string    `bson:"origin"`
+	Category    string    `bson:"category"`
+	Severity    Level     `bson:"severity"`
+	Message     string    `bson:"message"`
 }
 
 func (logger *QLogger) HandleSocket(conn *websocket.Conn) {
@@ -43,7 +71,7 @@ func (logger *QLogger) HandleSocket(conn *websocket.Conn) {
 	}
 }
 
-func (logger *_QLogger) CleanUp(conn *websocket.Conn) {
+func (logger *QLogger) CleanUp(conn *websocket.Conn) {
 	logger.ConnSync.Lock()
 	defer logger.ConnSync.Unlock()
 

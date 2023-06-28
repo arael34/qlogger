@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jonasiwnl/qlogger/types"
+	"github.com/arael34/qlogger/types"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

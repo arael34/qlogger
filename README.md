@@ -18,15 +18,15 @@ Then run ```./out/``` for mac/linux or ```out.exe``` on windows.
 
 ## TODO
 
-- write & store multiple websocket connections
+- delete old logs (with a time)
+
 - page feature (50 a page)
 - maybe use something other than json for speed?
-- CheckOrigin in logger.go
 - better auth handling
 - better error handling
-- cron jobs to clean old logs
+
+- cron job to clean reallyyyy old logs
 
 ## cleaning
 
 - context
-- ws on frontend

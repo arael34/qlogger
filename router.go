@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -18,34 +17,20 @@ import (
  *   Severity: int
  *   Origin: string
  */
-func (app *App) WriteLogHandler(w http.ResponseWriter, r *http.Request) {
-	// Authorize user.
-	if r.Header.Get("Authorization") != *app.logger.AuthHeader {
-		http.Error(w, "not authorized.", http.StatusUnauthorized)
-		return
-	}
-	if r.Method != "POST" {
-		http.Error(w, "method not allowed.", http.StatusMethodNotAllowed)
-		return
-	}
-
+func (app *App) WriteLogHandler(c *fiber.Ctx) error {
 	var log LogSchema
 
 	// Limit body size to 1MB and disallow unknown JSON fields
-	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1048576))
-	decoder.DisallowUnknownFields()
-
-	err := decoder.Decode(&log)
+	err := c.BodyParser(&log)
 	if err != nil {
 		// TODO: better error handling
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return fiber.ErrBadRequest
 	}
 
 	log.TimeWritten = time.Now().UTC()
 
 	ctx, cancel := context.WithTimeout(
-		r.Context(),
+		c.Context(),
 		time.Duration(15*time.Second),
 	)
 	defer cancel()
@@ -53,9 +38,10 @@ func (app *App) WriteLogHandler(w http.ResponseWriter, r *http.Request) {
 	// Insert schema into database.
 	_, err = app.logger.Database.InsertOne(ctx, log)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return fiber.ErrInternalServerError
 	}
+
+	return nil
 }
 
 /*
@@ -68,37 +54,28 @@ func (app *App) WriteLogHandler(w http.ResponseWriter, r *http.Request) {
  *   Category: string
  *   Severity: int
  */
-func (app *App) ReadLogsHandler(w http.ResponseWriter, r *http.Request) {
-	// Authorize user.
-	if r.Header.Get("Authorization") != *app.logger.AuthHeader {
-		http.Error(w, "not authorized", http.StatusUnauthorized)
-		return
-	}
-	if r.Method != "GET" {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
+func (app *App) ReadLogsHandler(c *fiber.Ctx) error {
 	// bson.M{} applies no filter.
 	filter := bson.M{}
 
-	for k, v := range r.URL.Query() {
+	for k, v := range c.AllParams() {
 		filter[k] = v[0]
 	}
 
-	logs, err := app.ReadLogs(r.Context(), filter)
+	logs, err := app.ReadLogs(c.Context(), filter)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return fiber.ErrInternalServerError
 	}
 
+	c.Response().Header.Set("Content-Type", "application/json")
+
 	// Write logs to client.
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(logs)
+	err = c.JSON(logs)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return fiber.ErrInternalServerError
 	}
+
+	return nil
 }
 
 /*
@@ -111,28 +88,19 @@ func (app *App) ReadLogsHandler(w http.ResponseWriter, r *http.Request) {
  *   Category: string
  *   Severity: int
  */
-func (app *App) PrioritiesHandler(w http.ResponseWriter, r *http.Request) {
-	// Authorize user.
-	if r.Header.Get("Authorization") != *app.logger.AuthHeader {
-		http.Error(w, "not authorized", http.StatusUnauthorized)
-		return
-	}
-	if r.Method != "GET" {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
+func (app *App) PrioritiesHandler(c *fiber.Ctx) error {
+	categories, err := app.FindPriority(c.Context())
+	if err != nil {
+		return fiber.ErrInternalServerError
 	}
 
-	categories, err := app.FindPriority(r.Context())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	c.Response().Header.Set("Content-Type", "application/json")
 
 	// Write logs to client.
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(categories)
+	err = c.JSON(categories)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return fiber.ErrInternalServerError
 	}
+
+	return nil
 }

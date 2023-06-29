@@ -3,9 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 
+	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -17,12 +17,14 @@ type App struct {
 }
 
 func (app *App) Run() error {
-	// Set up routes
-	http.HandleFunc("/api/write/", app.WriteLogHandler)
-	http.HandleFunc("/api/read/", app.ReadLogsHandler)
-	http.HandleFunc("/api/insights/priorities/", app.PrioritiesHandler)
+	router := fiber.New(fiber.Config{BodyLimit: 1048576})
 
-	http.Handle("/", http.FileServer(http.Dir("./static/")))
+	// Set up routes
+	router.Post("/api/write/", app.WriteLogHandler)
+	router.Get("/api/read/", app.ReadLogsHandler)
+	router.Get("/api/insights/priorities/", app.PrioritiesHandler)
+
+	router.Static("/", "./static/")
 
 	// For production
 	port := os.Getenv("PORT")
@@ -30,9 +32,9 @@ func (app *App) Run() error {
 		port = "3000"
 	}
 
-	fmt.Println("\nready to go.")
+	fmt.Println("\nlistening...")
 
-	err := http.ListenAndServe(":"+port, nil)
+	err := router.Listen(":" + port)
 	if err != nil {
 		fmt.Printf("error serving: %v", err)
 		os.Exit(CloseDatabase(app.client, 1))

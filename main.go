@@ -23,8 +23,9 @@ func main() {
 	fmt.Println("pinged database.")
 
 	logger := NewQLogger(
-		&env.AuthHeader,
 		client.Database(env.DatabaseName).Collection("logs"),
+		env.AllowedOrigins,
+		&env.AuthHeader,
 	)
 
 	app, err :=

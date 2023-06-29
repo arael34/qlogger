@@ -23,12 +23,17 @@ const (
 )
 
 type QLogger struct {
-	AuthHeader *string
-	Database   *mongo.Collection
+	Database       *mongo.Collection
+	AllowedOrigins *map[string]bool
+	AuthHeader     *string
 }
 
-func NewQLogger(authHeader *string, database *mongo.Collection) *QLogger {
-	return &QLogger{authHeader, database}
+func NewQLogger(
+	database *mongo.Collection,
+	allowedOrigins *map[string]bool,
+	authHeader *string,
+) *QLogger {
+	return &QLogger{database, allowedOrigins, authHeader}
 }
 
 /*

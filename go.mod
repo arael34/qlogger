@@ -1,4 +1,4 @@
-module github.com/arael34/qlogger
+module github.com/jonasiwnl/qlogger
 
 go 1.20
 
